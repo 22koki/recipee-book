@@ -1,10 +1,7 @@
-// App.js
+// App.js (or App.jsx)
 import React from 'react';
-import RecipeList from './RecipeList';
-import RecipeDetail from './RecipeDetail';
-import RecipeForm from './RecipeForm';
-import './App.css';
-
+import RecipeList from './RecipeList'; // Adjust the import path based on your project structure
+import './RecipeList.css'
 const App = () => {
   const sampleRecipes = [
     { title: 'Spaghetti Bolognese', description: 'Classic Italian dish with pasta and meat sauce' },
@@ -32,20 +29,11 @@ const App = () => {
   ];
 
   return (
-    <div className="app">
+    <div>
       <h1>My Recipe App</h1>
-      <div className="recipe-list">
-        <RecipeList recipes={sampleRecipes} />
-      </div>
-      <div className="recipe-detail">
-        <RecipeDetail />
-      </div>
-      <div className="recipe-form">
-        <RecipeForm />
-      </div>
+      <RecipeList recipes={sampleRecipes} />
     </div>
   );
 };
 
 export default App;
-

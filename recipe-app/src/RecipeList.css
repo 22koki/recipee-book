@@ -1,0 +1,41 @@
+/* RecipeList.css (or include in your main CSS file) */
+
+/* Style for the RecipeList container */
+div {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  /* Style for the RecipeList title */
+  h2 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 15px;
+  }
+  
+  /* Style for the Recipe items in the list */
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  li {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  /* Style for the Recipe title */
+  h3 {
+    color: #007BFF;
+    margin-bottom: 10px;
+  }
+  
+  /* Style for the Recipe description */
+  p {
+    color: #666;
+    margin-bottom: 0;
+  }
+  

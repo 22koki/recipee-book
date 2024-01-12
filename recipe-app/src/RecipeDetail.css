@@ -1,0 +1,16 @@
+/* RecipeDetail.css */
+.recipe-detail {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px;
+    background-color: #f9f9f9;
+  }
+  
+  .recipe-detail h2 {
+    color: #333;
+  }
+  
+  .recipe-detail p {
+    color: #666;
+  }
+  
