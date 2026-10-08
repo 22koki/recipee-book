@@ -1,12 +1,17 @@
-// RecipeForm.js
-import React from 'react';
-
-const RecipeForm = () => {
-  return (
-    <form className="recipe-form">
-      {/* Your form fields go here */}
-    </form>
-  );
-};
-
-export default RecipeForm;
+import React, { useState } from 'react';
+const units = ['g', 'kg', 'ml', 'l', 'tsp', 'tbsp', 'whole', 'clove', 'slice', 'cup'];
+const categories = ['Breakfast', 'Mains', 'Soups', 'Salads', 'Snacks', 'Desserts'];
+const arts = ['pasta', 'pancakes', 'soup', 'salad', 'curry', 'cookies', 'toast', 'tofu'];
+const fresh = () => ({ title: '', description: '', category: 'Mains', time: 30, servings: 2, art: 'pasta', favorite: false, ingredients: [{ name: '', quantity: 1, unit: 'g' }], instructions: [''] });
+export default function RecipeForm({ recipe, onSubmit, busy }) {
+  const [value, setValue] = useState(() => recipe ? JSON.parse(JSON.stringify(recipe)) : fresh());
+  const field = (name, val) => setValue(old => ({ ...old, [name]: val }));
+  const ingredient = (index, name, val) => setValue(old => ({ ...old, ingredients: old.ingredients.map((item, i) => i === index ? { ...item, [name]: val } : item) }));
+  return <form className="recipe-form" onSubmit={e => { e.preventDefault(); onSubmit(value); }}><span className="eyebrow">YOUR KITCHEN, YOUR RECIPES</span><h2>{recipe ? 'A little recipe refresh.' : 'Something worth sharing.'}</h2><p className="muted">Write down the dish you always come back to.</p>
+    <label htmlFor="recipe-title">Recipe name</label><input id="recipe-title" required maxLength={100} value={value.title} onChange={e => field('title', e.target.value)} placeholder="e.g. Sunday coconut rice" />
+    <label htmlFor="recipe-description">What makes it special?</label><textarea id="recipe-description" required maxLength={600} value={value.description} onChange={e => field('description', e.target.value)} placeholder="A little story, a favorite memory, or simply why it’s delicious." />
+    <div className="form-grid"><div><label htmlFor="recipe-category">Category</label><select id="recipe-category" value={value.category} onChange={e => field('category', e.target.value)}>{categories.map(c => <option key={c}>{c}</option>)}</select></div><div><label htmlFor="recipe-art">Dish illustration</label><select id="recipe-art" value={value.art} onChange={e => field('art', e.target.value)}>{arts.map(a => <option value={a} key={a}>{a.charAt(0).toUpperCase() + a.slice(1)}</option>)}</select></div><div><label htmlFor="recipe-time">Minutes</label><input id="recipe-time" type="number" min="1" max="1440" step="1" required value={value.time} onChange={e => field('time', Number(e.target.value))} /></div><div><label htmlFor="recipe-servings">Servings</label><input id="recipe-servings" type="number" min="1" max="24" step="1" required value={value.servings} onChange={e => field('servings', Number(e.target.value))} /></div></div>
+    <h3>Ingredients</h3><p className="muted tiny">Use the same ingredient name and unit across recipes to combine quantities in your shopping list.</p>{value.ingredients.map((item, i) => <div className="ingredient-form-row" key={i}><label className="sr-only" htmlFor={`ingredient-name-${i}`}>Ingredient {i + 1} name</label><input id={`ingredient-name-${i}`} placeholder="Ingredient name" required maxLength={100} value={item.name} onChange={e => ingredient(i, 'name', e.target.value)} /><label className="sr-only" htmlFor={`ingredient-quantity-${i}`}>Ingredient {i + 1} quantity</label><input id={`ingredient-quantity-${i}`} type="number" min="0.001" max="100000" step="any" required value={item.quantity} onChange={e => ingredient(i, 'quantity', Number(e.target.value))} /><label className="sr-only" htmlFor={`ingredient-unit-${i}`}>Ingredient {i + 1} unit</label><select id={`ingredient-unit-${i}`} value={item.unit} onChange={e => ingredient(i, 'unit', e.target.value)}>{units.map(unit => <option key={unit}>{unit}</option>)}</select><button type="button" className="remove" aria-label={`Remove ingredient ${i + 1}`} disabled={value.ingredients.length <= 1} onClick={() => field('ingredients', value.ingredients.filter((_, n) => n !== i))}>×</button></div>)}<button type="button" className="button small" disabled={value.ingredients.length >= 50} onClick={() => field('ingredients', [...value.ingredients, { name: '', quantity: 1, unit: 'g' }])}>＋ Add ingredient</button>
+    <h3>Cooking steps</h3>{value.instructions.map((step, i) => <div className="step-form-row" key={i}><span>{i + 1}</span><label className="sr-only" htmlFor={`step-${i}`}>Step {i + 1}</label><textarea id={`step-${i}`} required maxLength={1500} value={step} onChange={e => field('instructions', value.instructions.map((s, n) => n === i ? e.target.value : s))} placeholder="What happens next?" /><button type="button" className="remove" aria-label={`Remove step ${i + 1}`} disabled={value.instructions.length <= 1} onClick={() => field('instructions', value.instructions.filter((_, n) => n !== i))}>×</button></div>)}<button type="button" className="button small" disabled={value.instructions.length >= 30} onClick={() => field('instructions', [...value.instructions, ''])}>＋ Add step</button><button className="button primary full submit-recipe" disabled={busy} type="submit">{busy ? 'Saving…' : recipe ? 'Save changes ↗' : 'Add to my cookbook ↗'}</button>
+  </form>;
+}
