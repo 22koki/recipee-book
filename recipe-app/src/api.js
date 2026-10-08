@@ -9,7 +9,8 @@ export async function api(path, options = {}) {
   if (data === null) throw new Error('The server returned an unexpected response.');
   return data;
 }
-export const artURL = recipe => `${process.env.PUBLIC_URL}/art/${recipe.art}.svg`;
+export const artURL = recipe => recipe.image || `${process.env.PUBLIC_URL}/art/${recipe.art}.svg`;
+export const fallbackImage = (event, recipe) => { event.currentTarget.onerror = null; event.currentTarget.src = `${process.env.PUBLIC_URL}/art/${recipe.art}.svg`; };
 export const quantity = value => Number(value.toFixed(3)).toLocaleString();
 export const localDay = value => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
 export function weekDays(offset = 0) {

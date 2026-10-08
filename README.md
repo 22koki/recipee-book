@@ -123,3 +123,15 @@ Duplicated incomplete frontend/backend scaffolds and the previously committed vi
 - Filter the shelf to recipes taking 30 minutes or less, alongside search and category filters.
 
 The recipe journal table initializes automatically on existing SQLite databases without reseeding or replacing recipes. Editing a recipe or toggling its favorite preserves its notebook and cooking history. Deleting a recipe also deletes its journal.
+
+## Find recipes from TheMealDB
+
+Open **Find recipes**, search a dish name, or choose **Surprise me**. Select a result to review it in the recipe editor, then click **Add to my cookbook**. Searching and previewing do not save anything.
+
+The backend uses TheMealDB's V1 search, lookup, and single-random-meal endpoints through a fixed-host client with an eight-second timeout and bounded response size. No extra Python packages are needed. Requests default to the developer/educational test key `1`. Set the server environment variable `MEALDB_API_KEY` to your own key when needed; it is never included in frontend code. Check [TheMealDB's API access guidance](https://www.themealdb.com/api.php) before public distribution; supporter access is required for public app-store releases.
+
+The provider does not consistently supply cooking time or serving count. Those fields start blank and must be completed during review. Explicit numeric units and fractions convert to supported shopping-list quantities; pounds/ounces convert to grams. Ranges, tins, pinches, leaves, and “to taste” stay blank instead of guessing. Original measurement text remains visible beside each ingredient. Confirm quantities, units, time, and servings before saving.
+
+Imported recipes retain a TheMealDB source link and the provider's meal photo. A bundled illustration is used if the photo fails. Sources and photos persist through editing, duplication, and portable exports. Your saved recipes and planning API remain usable when the provider is offline; finding new recipes requires internet.
+
+Tests mock provider responses for deterministic search, lookup, empty results, network errors, review, import, persistence, and shopping-list integration. Transport tests cover URL encoding, timeout, response-size limits, and malformed upstream data.

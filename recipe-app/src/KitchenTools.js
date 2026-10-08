@@ -6,7 +6,7 @@ export function downloadRecipe(recipe, servings, format = 'text') {
   const journal = recipe.journal || {};
   const copy = { ...recipe }; delete copy.id; delete copy.journal;
   const content = format === 'json' ? JSON.stringify({ recipes: [copy] }, null, 2) : [
-    recipe.title, recipe.description, `${recipe.time} minutes · ${servings} servings`, '',
+    recipe.title, recipe.description, ...(recipe.mealdb_id ? ['Source: https://www.themealdb.com/meal/' + recipe.mealdb_id] : []), `${recipe.time} minutes · ${servings} servings`, '',
     'INGREDIENTS', ...recipe.ingredients.map(i => `${quantity(i.quantity * ratio)} ${i.unit} ${i.name}`),
     '', 'METHOD', ...recipe.instructions.map((step, i) => `${i + 1}. ${step}`),
     '', 'Quantities scaled; cooking times and written instructions stay as written.',
