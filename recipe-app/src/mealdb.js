@@ -25,7 +25,7 @@ export function mealDraft(meal) {
   return {
     title: meal.strMeal, description: [meal.strArea, meal.strCategory, 'Recipe from TheMealDB.'].filter(Boolean).join(' · '),
     category, art: category === 'Desserts' ? 'cookies' : category === 'Breakfast' ? 'pancakes' : 'pasta',
-    time: '', servings: '', favorite: false, mealdb_id: meal.idMeal, image,
+    time: '', servings: '', favorite: false, mealdb_id: meal.idMeal, image, prevent_duplicate: true,
     ingredients: ingredients.length ? ingredients : [{ name: '', quantity: '', unit: 'whole', source_measure: '' }],
     instructions: (meal.strInstructions || '').split(/\r?\n+/).map(s => s.trim()).filter(Boolean),
   };

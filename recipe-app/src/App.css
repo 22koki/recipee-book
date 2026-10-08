@@ -1408,5 +1408,12 @@ footer p,footer>span {
 .source-credit a, .discover-page a { color: #425d3c; text-decoration: underline; }
 .source-measure { grid-column: 1 / -1; font-size: 12px; color: #605d53; line-height: 1.5; overflow-wrap: anywhere; padding: 0 0 8px; }
 .discover-page .recipe-title { display: block; font-size: 23px; }
+.discovery-filters { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 18px; }
+.discovery-filters label { display: block; flex: 1; min-width: 180px; font-size: 14px; }
+.discovery-filters input, .discovery-filters select { display: block; width: 100%; box-sizing: border-box; padding: 12px; margin-top: 8px; border: 1px solid #b9b8ae; border-radius: 6px; font: inherit; background: #fffef9; color: inherit; }
+.wiki-recipe-cover { min-height: 210px; display: grid; align-content: center; justify-items: center; background: #e7ecdc; text-align: center; color: #425d3c; }
+.wiki-recipe-cover>span { font-size: 60px; }
+.wiki-recipe-cover p { line-height: 1.6; }
+.source-credit { overflow-wrap: anywhere; }
 .site-header nav { flex-wrap: wrap; }
 @media(max-width:480px) { .discover-page { padding: 30px 22px; } .discovery-search input { width: 100%; flex-basis: 100%; min-width: 0; } .discovery-search .button { flex: 1; } }

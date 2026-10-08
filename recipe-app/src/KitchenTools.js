@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { quantity } from './api';
+import { sourceText } from './RecipeSource';
 
 export function downloadRecipe(recipe, servings, format = 'text') {
   const ratio = servings / recipe.servings;
   const journal = recipe.journal || {};
   const copy = { ...recipe }; delete copy.id; delete copy.journal;
+  if (recipe.wikibooks_id) { copy.attribution = sourceText(recipe); copy.licence = 'CC BY-SA 4.0'; }
   const content = format === 'json' ? JSON.stringify({ recipes: [copy] }, null, 2) : [
-    recipe.title, recipe.description, ...(recipe.mealdb_id ? ['Source: https://www.themealdb.com/meal/' + recipe.mealdb_id] : []), `${recipe.time} minutes · ${servings} servings`, '',
+    recipe.title, recipe.description, ...(sourceText(recipe) ? [sourceText(recipe)] : []), `${recipe.time} minutes · ${servings} servings`, '',
     'INGREDIENTS', ...recipe.ingredients.map(i => `${quantity(i.quantity * ratio)} ${i.unit} ${i.name}`),
     '', 'METHOD', ...recipe.instructions.map((step, i) => `${i + 1}. ${step}`),
     '', 'Quantities scaled; cooking times and written instructions stay as written.',
