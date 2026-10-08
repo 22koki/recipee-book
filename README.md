@@ -149,3 +149,13 @@ Explicit quantities convert when supported. Approximate amounts, ranges, alterna
 Source identity detects already-saved recipes: search offers **Open saved** instead of another import. The backend also prevents concurrent discovery imports from creating duplicates. This checks provider plus source ID, not dish title; two different recipes named “rice” remain separate. **Make my own version** and file imports still deliberately create new copies.
 
 Additional validation covers live Wikibooks search and recipe extraction, deterministic provider errors, plain-text parsing, source-specific duplicate detection, licensing/export preservation, and responsive source selection and import review.
+
+## Drinks from TheCocktailDB
+
+Open **Drinks** in the main navigation to search by drink name, browse **Alcoholic** or **Non-alcoholic** drinks, or try a random drink from **All drinks**. Browsing is limited to 100 results. Filtering a name search applies the provider's exact alcohol classification; unknown and optional-alcohol drinks are not labelled non-alcoholic. Filter summaries fetch full details when you preview them.
+
+Previews show photos, glassware, ingredients, original measures, instructions, and a source link. Missing measures say **Amount not specified**; measures such as ounces, parts, and dashes are preserved without guessed conversions or serving counts. **Save drink** stores the complete recipe in a separate SQLite collection. **Saved drinks** searches titles and ingredients, works without provider access, and survives reloads and restarts. Repeated saves reuse the source ID. Removal requires confirmation. **Download drink** exports the method, original measures, and source as text. Food recipes, planning, and shopping continue to use the recipe collection.
+
+The fixed-host V1 client uses search, alcohol filter, lookup, and single-random endpoints with an eight-second timeout and a 1 MB response limit. No new dependencies are required. The backend defaults to the development/educational test key `1`; set `COCKTAILDB_API_KEY` on the server for your own key. Follow [TheCocktailDB's access guidance](https://www.thecocktaildb.com/api.php) for public app-store releases. The SQLite `drinks` table is created automatically on startup without deleting existing data.
+
+Browser CI runs the real Flask app against a disposable database with deterministic CocktailDB provider fixtures (`tests/browser_server.py`). This exercises saving, duplicate prevention, reload persistence, confirmed removal, downloads, previews, and desktop/mobile layouts without relying on a live provider. Production continues to use `backend.app:create_app`.

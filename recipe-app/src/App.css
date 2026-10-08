@@ -1422,3 +1422,26 @@ footer p,footer>span {
 .source-credit { overflow-wrap: anywhere; }
 .site-header nav { flex-wrap: wrap; }
 @media(max-width:480px) { .discover-page { padding: 30px 22px; } .discovery-search input { width: 100%; flex-basis: 100%; min-width: 0; } .discovery-search .button { flex: 1; } }
+
+/* A separate shelf for drinks, with the same cookbook visual language. */
+.drink-tabs { margin: 0 0 24px; }
+.drink-saved-search { margin: 24px 0; max-width: 460px; flex-wrap: wrap; }
+.drink-detail-photo { background: var(--cream); height: 280px; margin: -1px; overflow: hidden; border-radius: 18px 18px 0 0; }
+.drink-detail-photo img { width: 100%; height: 100%; object-fit: cover; }
+.drink-detail-copy { padding: 28px; }
+.drink-detail-copy h2 { font-size: clamp(30px, 5vw, 46px); margin: 12px 0; }
+.drink-tags, .drink-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.drink-tags > * { background: #e8eddf; border-radius: 30px; padding: 6px 12px; font-size: 13px; }
+.drink-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 28px 0; }
+.drink-detail-grid h3 { font-size: 22px; }
+.drink-detail-grid p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.drink-ingredients { padding: 0; list-style: none; }
+.drink-ingredients li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #ddd8cd; overflow-wrap: anywhere; }
+.drink-ingredients strong { text-align: right; }
+.drink-remove-confirm { padding: 16px; margin-top: 20px; background: #f5e9de; border-radius: 12px; }
+.drink-remove-confirm button { margin: 4px; }
+@media (max-width: 600px) {
+  .drink-detail-grid { grid-template-columns: 1fr; gap: 12px; }
+  .drink-detail-copy { padding: 20px; }
+  .drink-detail-photo { height: 220px; }
+}
