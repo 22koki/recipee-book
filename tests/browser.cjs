@@ -175,7 +175,7 @@ const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:5000';
     await page.reload();
     await page.locator('.recipe-card').first().waitFor();
     const foundMeal = { idMeal: '52771', strMeal: 'Discovery test rice', strCategory: 'Vegetarian', strArea: 'Kenyan', strInstructions: 'Cook the rice.\\nServe warm.', strMealThumb: 'https://www.themealdb.com/images/media/meals/discovery-test.jpg', strIngredient1: 'rice', strMeasure1: '1/2 cup', strIngredient2: 'salt', strMeasure2: 'pinch' };
-    await page.route('https://www.themealdb.com/images/media/meals/discovery-test.jpg', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><rect width="50" height="50" fill="green"/></svg>' }));
+    await page.route('https://www.themealdb.com/images/media/meals/discovery-test.jpg', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900"><rect width="900" height="900" fill="green"/></svg>' }));
     await page.route('**/api/discover**', route => {
       const url = new URL(route.request().url());
       if (url.searchParams.get('q') === 'offline') return route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'TheMealDB is unavailable right now.' }) });
