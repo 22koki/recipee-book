@@ -1,0 +1,9 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+instance/
+node_modules/
+recipe-app/build/
+test-results/
+.env
