@@ -230,6 +230,8 @@ const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:5000';
     await page.keyboard.press('Escape');
     await modal.waitFor({ state: 'detached' });
     await request.delete(`/api/recipes/${importedRecipe.id}`);
+    await page.reload();
+    await page.locator('.recipe-card').first().waitFor();
     await page.getByRole('button', { name: 'Find recipes', exact: true }).click();
     await page.getByRole('button', { name: 'Surprise me', exact: true }).click();
     await page.getByRole('button', { name: 'Review Discovery test rice', exact: true }).waitFor();
