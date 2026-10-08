@@ -12,7 +12,7 @@ const page = { page_id: '123', revision: '456', title: 'Community rice', ingredi
 test.each([['2 cups rice', 'rice', 2, 'cup'], ['¼ tsp salt', 'salt', 0.25, 'tsp'], ['2 eggs', 'eggs', 2, 'whole']])('extracts explicit Wikibooks ingredient %s', (line, name, quantity, unit) => {
   expect(wikiIngredient(line)).toEqual({ name, quantity, unit, source_measure: line });
 });
-test.each(['Salt to taste', '1–2 cloves garlic', '1 tin tomatoes', '1 lb (450 g) pasta'])('keeps uncertain ingredient %s for review', line => {
+test.each(['Salt to taste', '1–2 cloves garlic', '1 tin tomatoes', '1 lb (450 g) pasta', '2 fluid ounces water', '1 pint milk', '1 c sugar'])('keeps uncertain ingredient %s for review', line => {
   expect(wikiIngredient(line).quantity).toBe('');
   expect(wikiIngredient(line).source_measure).toBe(line);
 });

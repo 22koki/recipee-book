@@ -13,7 +13,7 @@ export function wikiIngredient(line) {
     if (parsed.quantity !== '') return { name: match[3], ...parsed, source_measure };
   }
   const count = source_measure.match(new RegExp('^(' + number + ')\\s+(.+)$'));
-  if (count && !/^(tins?|cans?|packets?|packages?|bunch(?:es)?|pinch(?:es)?|handfuls?|bags?|bottles?|leaves|sprigs?|stalks?|heads?)\b/i.test(count[2])) {
+  if (count && !/^(tins?|cans?|packets?|packages?|bunch(?:es)?|pinch(?:es)?|handfuls?|bags?|bottles?|leaves|sprigs?|stalks?|heads?|fluid|fl|pints?|pt|quarts?|qt|gallons?|gal|decilit(?:er|re)s?|dl|milliliters?|liters?|c|t|dessertspoons?|dsp)\b/i.test(count[2])) {
     const parsed = parseMeasure(count[1]);
     if (parsed.quantity !== '') return { name: count[2], ...parsed, source_measure };
   }
