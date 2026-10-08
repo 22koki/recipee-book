@@ -110,3 +110,16 @@ The default test URL is http://127.0.0.1:5000. Override it with `TEST_BASE_URL`.
 - `tests/`: backend and real-browser regression checks.
 
 Duplicated incomplete frontend/backend scaffolds and the previously committed virtual environment are removed from the working tree. Their original source remains in Git history. Create `.venv` on your own machine rather than reusing a copied environment.
+
+## Recipe notebook and collection additions
+
+- Save a personal 0–5 star rating (0 means unrated) and kitchen notes up to 2,000 characters per recipe.
+- Record each cooking session with **I cooked this today**; see the total and last cooking date. Dates use the server's calendar date.
+- Use a 1–180 minute kitchen timer with pause, resume, reset, and an on-screen completion message. It runs only while that recipe is open; it uses elapsed wall-clock time rather than counting interval callbacks.
+- Duplicate a recipe with **Make my own version**. A new recipe is saved immediately and opens for editing; the original recipe stays in place. Notes, ratings, and cooking history stay with the original.
+- Download a readable recipe using the selected serving count, including your saved notes.
+- Export a portable JSON recipe file, keeping its original serving size and excluding personal notes/history.
+- Add recipes manually with **Add recipe**, or use **Import recipes** to preview and add 1–50 exported recipes at once. Each import creates new recipes; repeating an import creates more copies. Files must be under 90 KB. All recipe details validate before any recipe in a batch is inserted.
+- Filter the shelf to recipes taking 30 minutes or less, alongside search and category filters.
+
+The recipe journal table initializes automatically on existing SQLite databases without reseeding or replacing recipes. Editing a recipe or toggling its favorite preserves its notebook and cooking history. Deleting a recipe also deletes its journal.

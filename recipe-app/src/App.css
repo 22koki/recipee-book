@@ -1376,3 +1376,25 @@ footer p,footer>span {
     animation:none!important
   }
 }
+
+/* Recipe notebook, timer, and collection import */
+.kitchen-tools { margin-top: 30px; }
+.kitchen-tool { padding: 20px 0; border-top: 1px solid #ddd9ce; }
+.kitchen-tool label { display: block; margin: 12px 0; font-size: 13px; }
+.kitchen-tool textarea, .kitchen-tool select, .timer-controls input { display: block; width: 100%; box-sizing: border-box; margin-top: 7px; padding: 10px; border: 1px solid #b9b8ae; border-radius: 6px; color: inherit; background: #fffef9; font: inherit; }
+.kitchen-tool textarea { resize: vertical; }
+.tool-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+.timer-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; }
+.timer-controls label { width: 90px; }
+.timer-controls output { font-size: 32px; font-variant-numeric: tabular-nums; }
+.timer-status { min-height: 20px; color: #3e573e; }
+.quick-filter { display: flex; align-items: center; gap: 8px; font-size: 12px; white-space: nowrap; }
+.quick-filter input { accent-color: #50654a; }
+.shelf-toolbar { flex-wrap: wrap; gap: 14px; }
+.recipe-import { padding: 45px 30px 30px; max-width: 680px; box-sizing: border-box; }
+.recipe-import h2 { font-size: 30px; }
+.recipe-import p { line-height: 1.7; }
+.recipe-import li { overflow-wrap: anywhere; margin: 8px 0; }
+.import-file { display: block; margin: 25px 0; }
+.import-file input { display: block; margin-top: 12px; max-width: 100%; }
+@media(max-width:480px) { .recipe-import { padding: 42px 22px 25px; } .tool-actions .button { max-width: 100%; } }
