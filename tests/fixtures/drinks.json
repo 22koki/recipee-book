@@ -1,0 +1,4 @@
+[
+  {"cocktaildb_id":"11007","title":"Margarita","alcohol":"Alcoholic","category":"Cocktail","glass":"Cocktail glass","image":"https://www.thecocktaildb.com/images/media/drink/test.jpg","ingredients":[{"name":"Tequila","measure":"1 1/2 oz"},{"name":"Salt","measure":""}],"instructions":"Shake and serve."},
+  {"cocktaildb_id":"12560","title":"Afterglow","alcohol":"Non alcoholic","category":"Other / Unknown","glass":"Highball glass","image":"https://www.thecocktaildb.com/images/media/drink/test2.jpg","ingredients":[{"name":"Orange juice","measure":"4 oz"},{"name":"Grenadine","measure":"1 part"}],"instructions":"Mix with ice and serve."}
+]
