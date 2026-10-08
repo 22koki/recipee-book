@@ -4,6 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 from backend.app import create_app
+from unittest.mock import patch
+from backend.mealdb import MealDBError
 
 
 class RecipeApiTests(unittest.TestCase):
@@ -172,6 +174,51 @@ class RecipeApiTests(unittest.TestCase):
             import sqlite3
             with sqlite3.connect(self.database) as connection:
                 self.assertEqual(connection.execute('SELECT COUNT(*) FROM recipe_journal').fetchone()[0], 0)
+
+    @patch('backend.app.fetch_meals')
+    def test_discovery_search_lookup_and_random(self, fetch):
+        meal = {'idMeal': '52771', 'strMeal': 'Test pasta'}
+        fetch.return_value = [meal]
+        self.assertEqual(self.client.get('/api/discover?q=pasta%20sauce').get_json(), [meal])
+        fetch.assert_called_with('search.php', {'s': 'pasta sauce'}, '1')
+        self.assertEqual(self.client.get('/api/discover/52771').get_json(), meal)
+        fetch.assert_called_with('lookup.php', {'i': '52771'}, '1')
+        self.assertEqual(self.client.get('/api/discover/random').get_json(), [meal])
+        fetch.assert_called_with('random.php', {}, '1')
+        self.assertEqual(len(self.client.get('/api/recipes').get_json()), 8)
+
+    @patch('backend.app.fetch_meals')
+    def test_discovery_errors_do_not_affect_saved_cookbook(self, fetch):
+        fetch.return_value = []
+        self.assertEqual(self.client.get('/api/discover?q=missing').get_json(), [])
+        self.assertEqual(self.client.get('/api/discover/52771').status_code, 404)
+        fetch.side_effect = MealDBError('Provider unavailable.')
+        self.assertEqual(self.client.get('/api/discover?q=pasta').status_code, 503)
+        self.assertEqual(len(self.client.get('/api/recipes').get_json()), 8)
+
+    @patch('backend.app.fetch_meals')
+    def test_discovery_rejects_invalid_queries_without_network(self, fetch):
+        for route in ['/api/discover', '/api/discover?q=' + 'a' * 101, '/api/discover/not-a-number']:
+            self.assertEqual(self.client.get(route).status_code, 400)
+        fetch.assert_not_called()
+
+    def test_imported_source_and_photo_persist_and_are_validated(self):
+        new = copy.deepcopy(self.recipe)
+        new.update(mealdb_id='52771', image='https://www.themealdb.com/images/media/meals/example.jpg')
+        new['ingredients'][0]['source_measure'] = '1 pound'
+        response = self.client.post('/api/recipes', json=new)
+        self.assertEqual(response.status_code, 201)
+        saved = response.get_json()
+        again = create_app(self.database).test_client().get(f"/api/recipes/{saved['id']}").get_json()
+        self.assertEqual(again['mealdb_id'], '52771')
+        self.assertEqual(again['image'], new['image'])
+        self.assertEqual(again['ingredients'][0]['source_measure'], '1 pound')
+        for value in ['javascript:alert(1)', 'https://evil.test/a.jpg', 'https://www.themealdb.com.evil.test/images/media/meals/a.jpg']:
+            new['image'] = value
+            self.assertEqual(self.client.post('/api/recipes', json=new).status_code, 400)
+        new['image'] = ''
+        new['mealdb_id'] = 'bad/reference'
+        self.assertEqual(self.client.post('/api/recipes', json=new).status_code, 400)
 
 
 if __name__ == '__main__':

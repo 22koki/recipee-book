@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import RecipeList from './RecipeList';
 import RecipeDetail from './RecipeDetail';
 import RecipeForm from './RecipeForm';
+import { parseMeasure, mealDraft } from './mealdb';
 import KitchenTools, { KitchenTimer } from './KitchenTools';
 import { act } from '@testing-library/react';
 const recipe = { id: 1, title: 'Test pasta', description: 'A good bowl.', category: 'Mains', time: 20, servings: 2, art: 'pasta', favorite: false, ingredients: [{ name: 'pasta', quantity: 100, unit: 'g' }], instructions: ['Cook pasta.', 'Serve it.'] };
@@ -75,4 +76,22 @@ test('timer rejects zero minutes and invalid durations', () => {
   expect(screen.getByRole('button', { name: 'Start timer' })).toBeDisabled();
   fireEvent.change(screen.getByLabelText('Timer minutes'), { target: { value: '181' } });
   expect(screen.getByRole('button', { name: 'Start timer' })).toBeDisabled();
+});
+
+test.each([['1/4 cup', 0.25, 'cup'], ['1 1/2 tablespoons', 1.5, 'tbsp'], ['½ teaspoon', 0.5, 'tsp'], ['3 cloves', 3, 'clove'], ['1 pound', 453.592, 'g'], ['2', 2, 'whole']])('converts explicit measurement %s', (input, amount, unit) => {
+  expect(parseMeasure(input)).toEqual({ quantity: amount, unit });
+});
+test.each(['pinch', 'to taste', '1 tin', '1-2 cups', '1/0 cup', '', '6 leaves'])('leaves uncertain measurement %s for user review', input => {
+  expect(parseMeasure(input).quantity).toBe('');
+});
+test('import drafts retain original measurements and do not invent time or servings', () => {
+  const draft = mealDraft({ idMeal: '52771', strMeal: 'Test rice', strCategory: 'Vegetarian', strArea: 'Kenyan', strIngredient1: 'rice', strMeasure1: '1/2 cup', strIngredient2: 'salt', strMeasure2: 'pinch', strInstructions: 'Cook rice.\nServe.' });
+  expect(draft.time).toBe('');
+  expect(draft.servings).toBe('');
+  expect(draft.ingredients[0]).toEqual({ name: 'rice', quantity: 0.5, unit: 'cup', source_measure: '1/2 cup' });
+  expect(draft.ingredients[1].quantity).toBe('');
+  expect(draft.instructions).toEqual(['Cook rice.', 'Serve.']);
+});
+test('external photos outside TheMealDB are not accepted in a draft', () => {
+  expect(mealDraft({ idMeal: '1', strMeal: 'Rice', strMealThumb: 'https://evil.test/photo.jpg' }).image).toBe('');
 });

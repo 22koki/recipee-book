@@ -1,6 +1,9 @@
 import json
 import math
 import os
+import re
+from urllib.parse import urlparse
+from .mealdb import fetch_meals, MealDBError
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -16,6 +19,7 @@ UNITS = ('g', 'kg', 'ml', 'l', 'tsp', 'tbsp', 'whole', 'clove', 'slice', 'cup')
 
 def create_app(database_path=None):
     app = Flask(__name__, static_folder=None)
+    app.config['MEALDB_API_KEY'] = os.environ.get('MEALDB_API_KEY', '1')
     app.config['MAX_CONTENT_LENGTH'] = 100_000
     app.config['DATABASE'] = str(database_path or os.environ.get('RECIPE_DATABASE', ROOT / 'instance' / 'recipes.sqlite3'))
     Path(app.config['DATABASE']).parent.mkdir(parents=True, exist_ok=True)
@@ -93,6 +97,20 @@ def create_app(database_path=None):
             raise ValueError('Choose a valid category and dish illustration.')
         if not isinstance(result['favorite'], bool):
             raise ValueError('Favorite must be true or false.')
+        mealdb_id = data.get('mealdb_id', '')
+        image = data.get('image', '')
+        if not isinstance(mealdb_id, str) or (mealdb_id and not re.fullmatch(r'[0-9]{1,12}', mealdb_id)):
+            raise ValueError('Use a valid TheMealDB recipe reference.')
+        if not isinstance(image, str) or len(image) > 500:
+            raise ValueError('Use a valid recipe photo.')
+        if image:
+            parsed = urlparse(image)
+            if parsed.scheme != 'https' or parsed.netloc != 'www.themealdb.com' or not parsed.path.startswith('/images/media/meals/') or parsed.query or parsed.fragment:
+                raise ValueError('Recipe photos must come from TheMealDB.')
+        if mealdb_id:
+            result['mealdb_id'] = mealdb_id
+        if image:
+            result['image'] = image
         ingredients = data.get('ingredients')
         if not isinstance(ingredients, list) or not 1 <= len(ingredients) <= 50:
             raise ValueError('Add between 1 and 50 ingredients.')
@@ -105,7 +123,13 @@ def create_app(database_path=None):
                 raise ValueError('Ingredient quantities must be positive numbers up to 100,000.')
             if item.get('unit') not in UNITS:
                 raise ValueError('Choose a supported ingredient unit.')
-            result['ingredients'].append({'name': text(item.get('name'), 'Ingredient name', 100), 'quantity': quantity, 'unit': item['unit']})
+            ingredient = {'name': text(item.get('name'), 'Ingredient name', 100), 'quantity': quantity, 'unit': item['unit']}
+            source_measure = item.get('source_measure', '')
+            if not isinstance(source_measure, str) or len(source_measure) > 100:
+                raise ValueError('Original ingredient measurements must be text up to 100 characters.')
+            if source_measure:
+                ingredient['source_measure'] = source_measure
+            result['ingredients'].append(ingredient)
         instructions = data.get('instructions')
         if not isinstance(instructions, list) or not 1 <= len(instructions) <= 30:
             raise ValueError('Add between 1 and 30 cooking steps.')
@@ -119,6 +143,29 @@ def create_app(database_path=None):
     @app.errorhandler(HTTPException)
     def http_error(error):
         return bad(error.description, error.code)
+
+    @app.errorhandler(MealDBError)
+    def discovery_error(error):
+        return bad(str(error), 503)
+
+    @app.get('/api/discover')
+    def discover_recipes():
+        query = request.args.get('q', '').strip()
+        if not query or len(query) > 100:
+            raise ValueError('Search with a dish name up to 100 characters.')
+        return jsonify(fetch_meals('search.php', {'s': query}, app.config['MEALDB_API_KEY']))
+
+    @app.get('/api/discover/random')
+    def discover_random():
+        return jsonify(fetch_meals('random.php', {}, app.config['MEALDB_API_KEY']))
+
+    @app.get('/api/discover/<meal_id>')
+    def discover_recipe(meal_id):
+        if not re.fullmatch(r'[0-9]{1,12}', meal_id):
+            raise ValueError('Use a valid TheMealDB recipe ID.')
+        meals = fetch_meals('lookup.php', {'i': meal_id}, app.config['MEALDB_API_KEY'])
+        match = next((meal for meal in meals if meal['idMeal'] == meal_id), None)
+        return jsonify(match) if match else bad('Recipe not found on TheMealDB.', 404)
 
     @app.get('/api/health')
     def health():
