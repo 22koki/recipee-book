@@ -41,6 +41,10 @@ def create_app(database_path=None):
                 day TEXT NOT NULL, slot TEXT NOT NULL,
                 recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
                 servings INTEGER NOT NULL, PRIMARY KEY(day, slot));
+            CREATE TABLE IF NOT EXISTS recipe_journal (
+                recipe_id INTEGER PRIMARY KEY REFERENCES recipes(id) ON DELETE CASCADE,
+                notes TEXT NOT NULL DEFAULT '', rating INTEGER NOT NULL DEFAULT 0,
+                cooked_count INTEGER NOT NULL DEFAULT 0, last_cooked TEXT);
             CREATE TABLE IF NOT EXISTS shopping_checks (key TEXT PRIMARY KEY, checked INTEGER NOT NULL);
         ''')
         if not db().execute("SELECT 1 FROM meta WHERE key='seeded'").fetchone():
@@ -55,7 +59,10 @@ def create_app(database_path=None):
 
     def recipe_row(recipe_id):
         row = db().execute('SELECT * FROM recipes WHERE id=?', (recipe_id,)).fetchone()
-        return dict(id=row['id'], **json.loads(row['data'])) if row else None
+        if not row:
+            return None
+        journal = db().execute('SELECT notes, rating, cooked_count, last_cooked FROM recipe_journal WHERE recipe_id=?', (recipe_id,)).fetchone()
+        return dict(id=row['id'], **json.loads(row['data']), journal=dict(journal) if journal else {'notes': '', 'rating': 0, 'cooked_count': 0, 'last_cooked': None})
 
     def payload():
         value = request.get_json(silent=True)
@@ -119,7 +126,7 @@ def create_app(database_path=None):
 
     @app.get('/api/recipes')
     def recipes():
-        return jsonify([dict(id=row['id'], **json.loads(row['data'])) for row in db().execute('SELECT * FROM recipes ORDER BY id')])
+        return jsonify([recipe_row(row['id']) for row in db().execute('SELECT id FROM recipes ORDER BY id')])
 
     @app.post('/api/recipes')
     def add_recipe():
@@ -127,6 +134,20 @@ def create_app(database_path=None):
         cursor = db().execute('INSERT INTO recipes(data) VALUES (?)', (json.dumps(data),))
         db().commit()
         return jsonify(recipe_row(cursor.lastrowid)), 201
+
+    @app.post('/api/recipes/import')
+    def import_recipes():
+        rows = payload().get('recipes')
+        if not isinstance(rows, list) or not 1 <= len(rows) <= 50:
+            raise ValueError('Import between 1 and 50 recipes.')
+        if any(not isinstance(row, dict) for row in rows):
+            raise ValueError('Each imported recipe must be an object.')
+        validated = [validate_recipe(row) for row in rows]
+        ids = []
+        with db():
+            for data in validated:
+                ids.append(db().execute('INSERT INTO recipes(data) VALUES (?)', (json.dumps(data),)).lastrowid)
+        return jsonify([recipe_row(recipe_id) for recipe_id in ids]), 201
 
     @app.get('/api/recipes/<int:recipe_id>')
     def get_recipe(recipe_id):
@@ -151,8 +172,31 @@ def create_app(database_path=None):
         if not isinstance(value, bool):
             raise ValueError('Favorite must be true or false.')
         recipe.pop('id')
+        recipe.pop('journal', None)
         recipe['favorite'] = value
         db().execute('UPDATE recipes SET data=? WHERE id=?', (json.dumps(recipe), recipe_id))
+        db().commit()
+        return jsonify(recipe_row(recipe_id))
+
+
+    @app.patch('/api/recipes/<int:recipe_id>/journal')
+    def save_journal(recipe_id):
+        if not recipe_row(recipe_id):
+            return bad('Recipe not found.', 404)
+        data = payload()
+        notes = data.get('notes')
+        if not isinstance(notes, str) or len(notes) > 2000:
+            raise ValueError('Notes must be text up to 2,000 characters.')
+        rating = integer(data.get('rating'), 'Rating', 0, 5)
+        db().execute('INSERT INTO recipe_journal(recipe_id, notes, rating) VALUES (?, ?, ?) ON CONFLICT(recipe_id) DO UPDATE SET notes=excluded.notes, rating=excluded.rating', (recipe_id, notes.strip(), rating))
+        db().commit()
+        return jsonify(recipe_row(recipe_id))
+
+    @app.post('/api/recipes/<int:recipe_id>/cooked')
+    def cooked_recipe(recipe_id):
+        if not recipe_row(recipe_id):
+            return bad('Recipe not found.', 404)
+        db().execute('INSERT INTO recipe_journal(recipe_id, cooked_count, last_cooked) VALUES (?, 1, ?) ON CONFLICT(recipe_id) DO UPDATE SET cooked_count=cooked_count+1, last_cooked=excluded.last_cooked', (recipe_id, date.today().isoformat()))
         db().commit()
         return jsonify(recipe_row(recipe_id))
 

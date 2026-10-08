@@ -120,6 +120,59 @@ class RecipeApiTests(unittest.TestCase):
         self.assertEqual(self.client.get('/api/shopping?start=2026-10-11&end=2026-10-05').status_code, 400)
         self.assertEqual(self.client.patch('/api/shopping/check', json={'key': 'x', 'checked': 'yes'}).status_code, 400)
 
+    def test_journal_and_cooking_history_persist(self):
+        route = f"/api/recipes/{self.recipe['id']}"
+        saved = self.client.patch(route + '/journal', json={'notes': ' Try more garlic. ', 'rating': 5})
+        self.assertEqual(saved.status_code, 200)
+        self.assertEqual(saved.get_json()['journal']['notes'], 'Try more garlic.')
+        for _ in range(2):
+            self.assertEqual(self.client.post(route + '/cooked', json={}).status_code, 200)
+        persisted = create_app(self.database).test_client().get(route).get_json()['journal']
+        self.assertEqual(persisted['rating'], 5)
+        self.assertEqual(persisted['cooked_count'], 2)
+        self.assertIsNotNone(persisted['last_cooked'])
+        self.client.put(route, json=self.recipe)
+        self.client.patch(route + '/favorite', json={'favorite': True})
+        self.assertEqual(self.client.get(route).get_json()['journal'], persisted)
+
+    def test_journal_validation_and_missing_recipe(self):
+        for data in [{'notes': 'x' * 2001, 'rating': 4}, {'notes': 4, 'rating': 4}, {'notes': '', 'rating': True}, {'notes': '', 'rating': 6}, {'notes': '', 'rating': -1}]:
+            self.assertEqual(self.client.patch('/api/recipes/1/journal', json=data).status_code, 400)
+        self.assertEqual(self.client.patch('/api/recipes/999/journal', json={'notes': '', 'rating': 0}).status_code, 404)
+        self.assertEqual(self.client.post('/api/recipes/999/cooked', json={}).status_code, 404)
+        self.assertEqual(self.client.patch('/api/recipes/1/journal', json={'notes': '', 'rating': 0}).status_code, 200)
+
+    def test_journal_does_not_leak_into_copies(self):
+        self.client.patch('/api/recipes/1/journal', json={'notes': 'Private kitchen note', 'rating': 3})
+        original = self.client.post('/api/recipes/1/cooked', json={}).get_json()
+        copy_recipe = self.client.post('/api/recipes', json=original).get_json()
+        self.assertEqual(copy_recipe['journal'], {'notes': '', 'rating': 0, 'cooked_count': 0, 'last_cooked': None})
+
+    def test_import_is_atomic_and_keeps_existing_recipes(self):
+        invalid = copy.deepcopy(self.recipe)
+        invalid['ingredients'] = []
+        response = self.client.post('/api/recipes/import', json={'recipes': [self.recipe, invalid]})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(len(self.client.get('/api/recipes').get_json()), 8)
+        response = self.client.post('/api/recipes/import', json={'recipes': [self.recipe, self.recipe]})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(response.get_json()), 2)
+        self.assertEqual(len(create_app(self.database).test_client().get('/api/recipes').get_json()), 10)
+        self.assertNotEqual(response.get_json()[0]['id'], response.get_json()[1]['id'])
+
+    def test_import_limits_and_payloads(self):
+        for rows in [[], [None], 'wrong', [self.recipe] * 51]:
+            self.assertEqual(self.client.post('/api/recipes/import', json={'recipes': rows}).status_code, 400)
+        self.assertEqual(self.client.post('/api/recipes/import', json=[]).status_code, 400)
+
+    def test_deleting_recipe_removes_journal(self):
+        self.client.post('/api/recipes/1/cooked', json={})
+        self.client.delete('/api/recipes/1')
+        with self.app.app_context():
+            import sqlite3
+            with sqlite3.connect(self.database) as connection:
+                self.assertEqual(connection.execute('SELECT COUNT(*) FROM recipe_journal').fetchone()[0], 0)
+
 
 if __name__ == '__main__':
     unittest.main()
