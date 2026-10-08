@@ -4,6 +4,7 @@ import os
 import re
 from urllib.parse import urlparse
 from .mealdb import fetch_meals, MealDBError
+from .wikibooks import search_recipes as search_wikibooks, lookup_recipe as lookup_wikibooks, WikibooksError
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -109,6 +110,13 @@ def create_app(database_path=None):
                 raise ValueError('Recipe photos must come from TheMealDB.')
         if mealdb_id:
             result['mealdb_id'] = mealdb_id
+        wiki_id = data.get('wikibooks_id', '')
+        wiki_revision = data.get('wikibooks_revision', '')
+        wiki_title = data.get('wikibooks_title', '')
+        if any([wiki_id, wiki_revision, wiki_title]):
+            if mealdb_id or not isinstance(wiki_id, str) or not re.fullmatch(r'[1-9][0-9]{0,11}', wiki_id) or not isinstance(wiki_revision, str) or not re.fullmatch(r'[1-9][0-9]{0,11}', wiki_revision):
+                raise ValueError('Use a valid Wikibooks recipe and revision reference.')
+            result.update(wikibooks_id=wiki_id, wikibooks_revision=wiki_revision, wikibooks_title=text(wiki_title, 'Original Wikibooks title', 300))
         if image:
             result['image'] = image
         ingredients = data.get('ingredients')
@@ -125,8 +133,8 @@ def create_app(database_path=None):
                 raise ValueError('Choose a supported ingredient unit.')
             ingredient = {'name': text(item.get('name'), 'Ingredient name', 100), 'quantity': quantity, 'unit': item['unit']}
             source_measure = item.get('source_measure', '')
-            if not isinstance(source_measure, str) or len(source_measure) > 100:
-                raise ValueError('Original ingredient measurements must be text up to 100 characters.')
+            if not isinstance(source_measure, str) or len(source_measure) > 600:
+                raise ValueError('Original ingredient measurements must be text up to 600 characters.')
             if source_measure:
                 ingredient['source_measure'] = source_measure
             result['ingredients'].append(ingredient)
@@ -147,6 +155,23 @@ def create_app(database_path=None):
     @app.errorhandler(MealDBError)
     def discovery_error(error):
         return bad(str(error), 503)
+
+    @app.errorhandler(WikibooksError)
+    def wikibooks_error(error):
+        return bad(str(error), 503)
+
+    @app.get('/api/discover/wikibooks')
+    def wikibooks_search():
+        query = request.args.get('q', '').strip()
+        if not query or len(query) > 100:
+            raise ValueError('Search with a dish name up to 100 characters.')
+        return jsonify(search_wikibooks(query))
+
+    @app.get('/api/discover/wikibooks/<page_id>')
+    def wikibooks_lookup(page_id):
+        if not re.fullmatch(r'[1-9][0-9]{0,11}', page_id):
+            raise ValueError('Use a valid Wikibooks recipe ID.')
+        return jsonify(lookup_wikibooks(page_id))
 
     @app.get('/api/discover')
     def discover_recipes():
@@ -177,9 +202,21 @@ def create_app(database_path=None):
 
     @app.post('/api/recipes')
     def add_recipe():
-        data = validate_recipe(payload())
-        cursor = db().execute('INSERT INTO recipes(data) VALUES (?)', (json.dumps(data),))
-        db().commit()
+        original = payload()
+        data = validate_recipe(original)
+        prevent_duplicate = original.get('prevent_duplicate', False)
+        if not isinstance(prevent_duplicate, bool):
+            raise ValueError('Duplicate protection must be true or false.')
+        # Serialize duplicate checks with insertion across concurrent browsers.
+        db().execute('BEGIN IMMEDIATE')
+        with db():
+            if prevent_duplicate:
+                source_field = 'wikibooks_id' if data.get('wikibooks_id') else 'mealdb_id'
+                if data.get(source_field):
+                    for row in db().execute('SELECT id, data FROM recipes'):
+                        if json.loads(row['data']).get(source_field) == data[source_field]:
+                            return jsonify(error='This recipe is already in your cookbook. Open the existing recipe from Find recipes.', existing_id=row['id']), 409
+            cursor = db().execute('INSERT INTO recipes(data) VALUES (?)', (json.dumps(data),))
         return jsonify(recipe_row(cursor.lastrowid)), 201
 
     @app.post('/api/recipes/import')

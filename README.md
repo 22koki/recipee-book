@@ -135,3 +135,17 @@ The provider does not consistently supply cooking time or serving count. Those f
 Imported recipes retain a TheMealDB source link and the provider's meal photo. A bundled illustration is used if the photo fails. Sources and photos persist through editing, duplication, and portable exports. Your saved recipes and planning API remain usable when the provider is offline; finding new recipes requires internet.
 
 Tests mock provider responses for deterministic search, lookup, empty results, network errors, review, import, persistence, and shopping-list integration. Transport tests cover URL encoding, timeout, response-size limits, and malformed upstream data.
+
+## Search both recipe collections
+
+**Find recipes** now has **All sources / TheMealDB / Wikibooks**. All sources searches both providers concurrently; if one fails, the other provider's results remain visible. **Surprise me** continues to use TheMealDB and is hidden when only Wikibooks is selected.
+
+Wikibooks search uses the MediaWiki Action API, Cookbook namespace 102, and the Recipes category. Recipe previews extract plain-text ingredient lists and method sections; navigation, references, notes, and ingredient-guide prose are excluded. Pages without usable recipe sections show a helpful error instead of inventing a recipe. No API key or additional Python dependency is needed.
+
+Each imported Wikibooks recipe retains its original page ID, revision, original title, contributor-history link, and CC BY-SA 4.0 text licence. Forms, recipe details, readable downloads, portable JSON exports, duplicates, and edits retain attribution. Imports are identified as adaptations because measurements, serving metadata, or wording can change. Shared adaptations retain the CC BY-SA licence. Wikibooks photos are not imported automatically because individual media can have different licences; results use a clearly labelled cookbook cover.
+
+Explicit quantities convert when supported. Approximate amounts, ranges, alternate measurements, and uncertain container sizes remain blank for review. Cooking time and servings also require review. A selected original revision identifies the exact source of the imported text.
+
+Source identity detects already-saved recipes: search offers **Open saved** instead of another import. The backend also prevents concurrent discovery imports from creating duplicates. This checks provider plus source ID, not dish title; two different recipes named “rice” remain separate. **Make my own version** and file imports still deliberately create new copies.
+
+Additional validation covers live Wikibooks search and recipe extraction, deterministic provider errors, plain-text parsing, source-specific duplicate detection, licensing/export preservation, and responsive source selection and import review.
